@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as anm
+from collections import deque
 
 G = 6.67430e-11  # 引力常数 (m³ kg⁻¹ s⁻²)
 # 太阳和地球的近似值
@@ -12,8 +13,8 @@ r_initial = 1.496e11  # 地球到太阳的平均距离(m)
 v_initial = 2.98e4    # 地球轨道速度(m/s)
 
 # 模拟参数
-dt = 3600 * 6       # 时间步长 (秒) - 6小时
-num_steps = 365 * 5  # 总步数 (5年)
+dt = 3600 * 24       # 时间步长 (秒)
+num_steps = 365 * 1  # 总步数 (年)
 
 # 初始化数组
 x = np.zeros(num_steps)
@@ -30,6 +31,9 @@ vy[0] = v_initial
 # 给动画部分统计边界条件
 xmax = x[0]
 ymax = y[0]
+
+# 动画播放参数
+frame_interv = 10 # 帧率（毫秒）
 
 # 欧拉法数值积分
 for i in range(num_steps - 1):
@@ -97,38 +101,58 @@ plt.tight_layout()
 plt.savefig('Eu_sun-earth.png', dpi=300)
 
 # 动画
+
 fig = plt.figure() #创建一个新的图形（Figure）对象，作为整个图表的容器
 ax = fig.add_subplot(1, 1, 1) #在图形中添加一个子图（Axes）。参数(1, 1, 1)表示创建1x1网格中的第1个（也是唯一一个）子图
 line, = plt.plot([], [], "r-", animated=True) #创建一个空的线条对象 [], []：初始x和y数据为空
-x = []
-y = [] # 初始化两个空列表，用于存储动画中不断增加的x和y坐标数据
+x_anim = []
+y_anim = [] # 初始化两个空列表，用于存储动画中不断增加的x和y坐标数据
 
 def init():
-    ax.set_xlim(-xmax, xmax) # 设置x轴范围
-    ax.set_ylim(-ymax, ymax) # 设置y轴范围
+    ax.set_xlim(-xmax * 1.1, xmax * 1.1) # 设置x轴范围
+    ax.set_ylim(-ymax * 1.1, ymax * 1.1) # 设置y轴范围
     return line,
 
 '''
-def update(frame): #动画更新函数（每帧调用） frame：从frames参数传入的当前帧值
-    x.append(frame) # 将当前帧值添加到x列表
-    y.append(np.sin(frame))
+# sin模板方案
+def update(frame): #动画更新函数（每帧调用） frame: 从frames参数传入的当前帧值
+    x_anim.append(frame) # 将当前帧值添加到x列表
+    y_anim.append(np.sin(frame))
     line.set_data(x, y) # 更新线条数据
     return line,
 '''
+
+'''
+# 拖尾轨迹：定义轨迹长度（显示最近的点数）
+trail_length = frame_totnum -10 
+# 初始化动画轨迹列表
+x_anim = deque(maxlen=trail_length)  # 使用双端队列限制长度
+y_anim = deque(maxlen=trail_length)
+'''
+
 def update(n): #第n帧
-    x.append(x[n]) # 将当前帧值添加到x列表
-    y.append(y[n])
-    line.set_data(x, y) # 更新线条数据    
+    x_anim.append(x[n]) # 将当前帧值添加到x列表
+    y_anim.append(y[n])
+    line.set_data(x_anim, y_anim) # 更新线条数据    
     #line.set_data(x[:n+1], y[:n+1]) #显示n+1个点（左闭右开区间
     return line,
 
 ani = anm.FuncAnimation(fig # 使用创建的Figure对象
     ,update # 指定更新函数
     ,frames= num_steps # 总帧数
-    ,interval=10 # 帧间隔10毫秒（展示帧率
+    ,interval=frame_interv # 帧间隔10毫秒（展示帧率
     ,init_func=init # 指定初始化函数
     ,blit=True  #使用blitting优化（只重绘变化部分）
+    ,repeat=False
     )
 
+plt.plot(0, 0, 'yo', markersize=15, label=f'm1={m1:.2e} kg)')
+plt.plot(x[0], y[0], 'go', markersize=5, label=f'initial position')
+#plt.plot(x[-1], y[-1], 'ro', markersize=5, label=f'final position')
+plt.grid(True)
+plt.xlabel('x-axis')
+plt.ylabel('y-axis')
+plt.title('Cartesian coordinate position')
+plt.legend()
 plt.show()
-ani.save("animation.gif", fps=25, writer="imagemagick")
+ani.save("2Eu_anime.gif", fps=20, writer="imagemagick")
