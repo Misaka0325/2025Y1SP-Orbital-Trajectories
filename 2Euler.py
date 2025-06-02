@@ -97,6 +97,7 @@ plt.tight_layout()
 plt.savefig('Eu_sun-earth.png', dpi=300)
 
 # 动画
+'''
 fig = plt.figure() #创建一个新的图形（Figure）对象，作为整个图表的容器
 ax = fig.add_subplot(1, 1, 1) #在图形中添加一个子图（Axes）。参数(1, 1, 1)表示创建1x1网格中的第1个（也是唯一一个）子图
 line, = plt.plot([], [], "r-", animated=True) #创建一个空的线条对象 [], []：初始x和y数据为空
@@ -108,13 +109,13 @@ def init():
     ax.set_ylim(-ymax, ymax) # 设置y轴范围
     return line,
 
-'''
-def update(frame): #动画更新函数（每帧调用） frame：从frames参数传入的当前帧值
+# 初始方案
+def update(frame): #动画更新函数（每帧调用） frame: 从frames参数传入的当前帧值
     x.append(frame) # 将当前帧值添加到x列表
     y.append(np.sin(frame))
     line.set_data(x, y) # 更新线条数据
     return line,
-'''
+
 def update(n): #第n帧
     x.append(x[n]) # 将当前帧值添加到x列表
     y.append(y[n])
@@ -129,6 +130,43 @@ ani = anm.FuncAnimation(fig # 使用创建的Figure对象
     ,init_func=init # 指定初始化函数
     ,blit=True  #使用blitting优化（只重绘变化部分）
     )
+'''
+
+# folowing animation part is constructed by Dawid
+# Store original simulation data (don't reuse x and y)
+x_data = x.copy()
+y_data = y.copy()
+
+# New variables for animation
+x_anim = []
+y_anim = []
+
+# Create new figure for animation
+fig = plt.figure()
+ax = fig.add_subplot(1, 1, 1)
+line, = ax.plot([], [], "r-")
+
+def init():
+    ax.set_xlim(-xmax * 1.1, xmax * 1.1)
+    ax.set_ylim(-ymax * 1.1, ymax * 1.1)
+    line.set_data([], [])
+    return line,
+
+def update(n):
+    x_anim.append(x_data[n])
+    y_anim.append(y_data[n])
+    line.set_data(x_anim, y_anim)
+    return line,
+
+
+ani = anm.FuncAnimation(
+    fig,
+    update,
+    frames=len(x_data),  # use the actual length
+    init_func=init,
+    blit=True,
+    interval=20
+)
 
 plt.show()
 ani.save("animation.gif", fps=25, writer="imagemagick")
